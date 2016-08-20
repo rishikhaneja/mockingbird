@@ -1,7 +1,7 @@
 
 
-struct sample_class {
+struct SampleClass2 {
 
-    void bleh() {}
+    void method1() {}
 
 };

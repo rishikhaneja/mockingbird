@@ -2,41 +2,41 @@
 import sys
 import glob
 import os
-import CppHeaderParser
+import CppHeaderParser as Parser
 
-out_file = 'output.hpp'
+out_file_name = 'output.hpp'
 result = ''
 
 os.chdir('.')
 
-for file_name in (f for f in glob.glob('*.hpp') if f != out_file):
+for file_name in (f for f in glob.glob('*.hpp') if f != out_file_name):
 
         try:
-            cppHeader = CppHeaderParser.CppHeader(file_name)
+            header = Parser.CppHeader(file_name)
 
-            for class_name, class_items in cppHeader.classes.items():
+            for class_name, class_items in header.classes.items():
 
-                result += 'struct Mock'+class_name+' : '+class_name+' {\n'
+                result += 'struct Mock' + class_name + ' : ' + (class_items['namespace'] + "::" if class_items['namespace'] else '') + class_name + ' {\n'
 
-                for public_method in (m for m in class_items['methods']['public'] if not m['constructor'] and not m['destructor']):
+                for method in (m for m in class_items['methods']['public'] if not m['constructor'] and not m['destructor']):
 
                         result += '    MOCK_<const>METHOD_<arg_count>(<name>, <return>(<args>));\n'.\
-                            replace('<const>', 'CONST_' if public_method['const'] else '').\
-                            replace('<arg_count>', str(len(public_method['parameters']))).\
-                            replace('<name>', public_method['name']).\
-                            replace('<return>', public_method['returns']).\
-                            replace('<args>', ', '.join('%s' % (parameter['type']) for parameter in public_method['parameters']))
+                            replace('<const>', 'CONST_' if method['const'] else '').\
+                            replace('<arg_count>', str(len(method['parameters']))).\
+                            replace('<name>', method['name']).\
+                            replace('<return>', method['returns']).\
+                            replace('<args>', ', '.join('%s' % (param['type']) for param in method['parameters']))
 
-                result += '};\n'
+                result += '};\n\n'
 
-        except CppHeaderParser.CppParseError as e:
+        except Parser.CppParseError as e:
             print(e)
             sys.exit(1)
 
-mock_file = open(out_file, 'w')
-mock_file.writelines(result)
-mock_file.close()
+out_file = open(out_file_name, 'w')
+out_file.writelines(result)
+out_file.close()
 
-print 'generating:'
+print 'generating:\n'
 print result
 print 'success! see output.hpp'
